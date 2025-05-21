@@ -21,7 +21,7 @@ Diese Arbeit adressiert folgende Forschungsfragen:
 ## Methodik im Überblick
 
 * **Modelle:**
-    * T5-Familie: T5-base, T5-v11-large, FLAN-T5-large 
+    * T5-Familie: T5-base, T5-large, T5-v11-large, FLAN-T5-large 
     * DeepSeek-Familie: DeepSeek-Coder-1.3B-instruct, DeepSeek-Coder-6.7b-instruct
 * **Techniken:**
     * Vollständiges Fine-Tuning
