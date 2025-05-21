@@ -268,7 +268,7 @@ print(f"\nLoading tokenizer and model: {MODEL_NAME}...")
 # Initialize tokenizer with special tokens
 tokenizer = AutoTokenizer.from_pretrained(
     MODEL_NAME,
-    padding_side="right",  # Korrigiert: "right" statt "left" für Decoder-Modelle
+    padding_side="right",
     use_fast=True
 )
 
@@ -301,13 +301,12 @@ print("Model and tokenizer loaded.")
 print(f"Special SQL tokens added: {SQL_START_TOKEN}, {SQL_END_TOKEN}")
 
 # --- Tokenization and DataCollator ---
-# --- Tokenization and DataCollator ---
 class SQLLabelMasker:
     def __init__(self, tokenizer, max_input_length=1024, max_target_length=256):
         self.tok  = tokenizer
         self.max_in, self.max_tgt = max_input_length, max_target_length
 
-    def __call__(self, batch):                   # ← batch ist Dict[str, List[str]]
+    def __call__(self, batch):
         prompts = batch["prompt"]
         targets = batch["target"]
 
@@ -377,7 +376,7 @@ training_args = TrainingArguments(
     gradient_accumulation_steps=GRADIENT_ACCUMULATION_STEPS,
     learning_rate=LEARNING_RATE,
     weight_decay=WEIGHT_DECAY,
-    warmup_steps=warmup_steps,  # Verwende warmup_steps statt warmup_ratio
+    warmup_steps=warmup_steps,
     bf16=USE_BF16,
     fp16=False,
     gradient_checkpointing=True,
@@ -393,10 +392,10 @@ training_args = TrainingArguments(
     metric_for_best_model="eval_loss",
     greater_is_better=False,
     report_to="tensorboard",
-    optim="adamw_8bit",  # 8-bit optimizer for better memory efficiency
+    optim="adamw_8bit",
     lr_scheduler_type="cosine",
     seed=42,
-    remove_unused_columns=False,  # Important for custom data processing
+    remove_unused_columns=False,
 )
 
 # ----- SAFE COLLATOR -----
@@ -419,7 +418,7 @@ trainer = Trainer(
     train_dataset=tokenized_train,
     eval_dataset=tokenized_dev,
     tokenizer=tokenizer,
-    data_collator=collate,  # Wichtig: Verwende unseren eigenen Collator
+    data_collator=collate,
 )
 print("Trainer initialized.")
 
@@ -438,12 +437,6 @@ if RESUME_FROM_CHECKPOINT:
     else: print(f"Output directory {DRIVE_OUTPUT_DIR} does not exist.")
 
 try:
-    # Optional: Diese initiale Evaluierung kann entfernt werden, um Zeit zu sparen
-    # print("Running initial evaluation to check for issues...")
-    # initial_eval = trainer.evaluate()
-    # if np.isnan(initial_eval.get("eval_loss", float("inf"))):
-    #     print("NaN eval loss detected – continuing anyway.")
-
     train_result = trainer.train(resume_from_checkpoint=checkpoint)
 
     # ---------- post-training actions ----------
