@@ -1,5 +1,5 @@
 # ======================================================================
-# DeepSeek Text-to-SQL Fine-Tuning Script (IMPROVED)
+# DeepSeek Text-to-SQL Fine-Tuning Script
 # For bachelor thesis comparing instruction-tuned vs code-pretrained models
 # Optimized for A100 GPU on Colab
 # ======================================================================
@@ -78,13 +78,13 @@ set_seed(42)
 # --- Configuration ---
 SCHEMA_FORMAT = "sql"
 MODEL_NAME      = "deepseek-ai/deepseek-coder-6.7b-instruct"
-EXPERIMENT_NAME = "deepseek_coder_6.7b_lora_v1.5"  # Incremented version number
+EXPERIMENT_NAME = "deepseek_coder_6.7b_lora_v1.5"
 MODEL_LABEL = MODEL_NAME.split("/")[-1]
 
 # 2)  TRAINING HYPER-PARAMS - A100 OPTIMIZED
 # Updated based on recommendations
-EPOCHS                     = 10        # Increased from 6 to 10
-LEARNING_RATE              = 2e-5      # Lowered from 1e-4 to 2e-5
+EPOCHS                     = 10
+LEARNING_RATE              = 2e-5
 BATCH_SIZE                 = 2
 GRADIENT_ACCUMULATION_STEPS= 8
 WEIGHT_DECAY               = 0.01
@@ -105,14 +105,14 @@ LOAD_IN_8BIT = True
 LORA_R = 16
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
-TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "dense"]  # Corrected for DeepSeek
+TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "dense"]
 
 # 5) Special tokens for SQL formatting
 SQL_START_TOKEN = "<SQL_START>"
 SQL_END_TOKEN = "<SQL_END>"
 
 # 6) Generation config for inference
-NUM_BEAMS = 4  # Added beam search with 4 beams
+NUM_BEAMS = 4
 
 # Google Drive paths
 DRIVE_BASE_DIR = "/content/drive/MyDrive/text2sql"
@@ -428,12 +428,12 @@ print("Adding 'finish' examples to help model learn when to stop...")
 finish_examples = []
 
 # Simple dummy examples
-for i in range(min(70, len(train_dataset) // 100)):  # Add about 1% of dataset size
+for i in range(min(70, len(train_dataset) // 100)):
     finish_examples.append({
         "question": f"Do nothing {i}",
         "schema": "Table: dummy\nColumns: id (NUMBER)",
         "db_id": "none",
-        "query": "SELECT 1"  # Very simple query to help model learn to finish
+        "query": "SELECT 1"
     })
 
 # Add table-only queries to reinforce FROM clause
@@ -498,7 +498,7 @@ print(f"Added special tokens: {SQL_START_TOKEN}, {SQL_END_TOKEN}")
 print(f"SQL_START_TOKEN ID: {tokenizer.convert_tokens_to_ids(SQL_START_TOKEN)}")
 print(f"SQL_END_TOKEN ID: {tokenizer.convert_tokens_to_ids(SQL_END_TOKEN)}")
 
-# Try to configure with Flash Attention 2 - improved error handling
+# Try to configure with Flash Attention 2
 try:
     import torch.nn as nn
 
@@ -596,7 +596,7 @@ if LOAD_IN_4BIT:
         print(f"Warning: prepare_model_for_kbit_training failed: {e}")
         print("Continuing without it - model might still work with LoRA")
 
-    # Set gradient checkpointing to disabled for A100 (for speed)
+    # Set gradient checkpointing to disabled
     if hasattr(model, "config") and hasattr(model.config, "use_cache"):
         model.config.use_cache = False
 
@@ -650,7 +650,6 @@ def tokenize_examples(examples):
     ]
 
     # Tokenize (prompt + SQL answer), truncating only the prompt if too long
-    # This ensures we don't truncate our answers
     encodings = tokenizer(
         texts,
         truncation="only_first",
@@ -714,15 +713,15 @@ def collate_with_masked_labels(features):
         {k: [f[k] for f in features] for k in ["input_ids", "attention_mask"]},
         padding="longest",
         return_tensors="pt",
-        pad_to_multiple_of=8  # For better GPU efficiency
+        pad_to_multiple_of=8
     )
 
-    # Pad labels by hand (use -100 so they are ignored in the loss)
+    # Pad labels by hand
     max_len = pad_batch["input_ids"].shape[1]
     labels = []
     for f in features:
         l = f["labels"]
-        l = l + [-100] * (max_len - len(l))  # Pad with -100 which is ignored in loss
+        l = l + [-100] * (max_len - len(l))
         labels.append(torch.tensor(l, dtype=torch.long))
 
     pad_batch["labels"] = torch.stack(labels)
