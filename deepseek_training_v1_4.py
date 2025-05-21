@@ -103,7 +103,7 @@ LOAD_IN_4BIT = True
 LORA_R = 16
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.05
-TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "dense"]  # Corrected for DeepSeek
+TARGET_MODULES = ["q_proj", "k_proj", "v_proj", "dense"]
 
 # 5) Special tokens for SQL formatting
 SQL_START_TOKEN = "<SQL_START>"
@@ -318,12 +318,12 @@ if train_dataset is None or dev_dataset is None:
 # After loading and preparing train_dataset
 print("Adding 'finish' examples to help model learn when to stop...")
 finish_examples = []
-for i in range(min(70, len(train_dataset) // 100)):  # Add about 1% of dataset size
+for i in range(min(70, len(train_dataset) // 100)):
     finish_examples.append({
         "question": f"Do nothing {i}",
         "schema": "Table: dummy\nColumns: id (NUMBER)",
         "db_id": "none",
-        "query": "SELECT 1"  # Very simple query to help model learn to finish
+        "query": "SELECT 1"
     })
 
 # Convert to Dataset and combine with train_dataset
@@ -339,7 +339,7 @@ if SUBSET_RATIO < 1.0:
 # Calculate steps per epoch AFTER applying subset if needed
 steps_per_epoch = len(train_dataset) // (BATCH_SIZE * GRADIENT_ACCUMULATION_STEPS)
 total_steps = steps_per_epoch * EPOCHS
-warmup_steps = int(total_steps * 0.1)  # Increased to 10% for smoother LoRA warmup
+warmup_steps = int(total_steps * 0.1)
 half_epoch_steps = steps_per_epoch // 2
 
 print(f"Steps per epoch: {steps_per_epoch}")
@@ -564,12 +564,12 @@ def collate_with_masked_labels(features):
         pad_to_multiple_of=8  # For better GPU efficiency
     )
 
-    # Pad labels by hand (use -100 so they are ignored in the loss)
+    # Pad labels by hand
     max_len = pad_batch["input_ids"].shape[1]
     labels = []
     for f in features:
         l = f["labels"]
-        l = l + [-100] * (max_len - len(l))  # Pad with -100 which is ignored in loss
+        l = l + [-100] * (max_len - len(l))
         labels.append(torch.tensor(l, dtype=torch.long))
 
     pad_batch["labels"] = torch.stack(labels)
